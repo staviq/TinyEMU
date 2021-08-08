@@ -212,6 +212,99 @@ CharacterDevice *console_init(BOOL allow_ctrlc)
     dev->read_data = console_read;
     return dev;
 }
+#else
+	
+static void console_write(void *opaque, const uint8_t *buf, int len)
+{
+    fwrite(buf, 1, len, stdout);
+    fflush(stdout);
+}
+
+static int console_read(void *opaque, uint8_t *buf, int len)
+{
+	fprintf( stderr, "DBG: CONSOLE READ", buf );
+	//STDIODevice *s = opaque;
+    int ret, i, j;
+    uint8_t ch;
+    
+    if (len <= 0)
+        return 0;
+
+    ret = read(fileno(stdin), buf, len);
+    if (ret < 0)
+        return 0;
+    if (ret == 0) {
+        /* EOF */
+        exit(1);
+    }
+	else
+	{
+		fprintf( stderr, "DBG: |%s|\r\n", buf );
+	}
+
+    j = 0;
+    for(i = 0; i < ret; i++) {
+        ch = buf[i];
+        if (0){/* (s->console_esc_state) {
+            s->console_esc_state = 0;
+            switch(ch) {
+            case 'x':
+                printf("Terminated\n");
+                exit(0);
+            case 'h':
+                printf("\n"
+                       "C-a h   print this help\n"
+                       "C-a x   exit emulator\n"
+                       "C-a C-a send C-a\n"
+                       );
+                break;
+            case 1:
+                goto output_char;
+            default:
+                break;
+            }*/
+        } else {
+            if (0){/*(ch == 1) {
+                s->console_esc_state = 1;
+            */} else {
+            output_char:
+                buf[j++] = ch;
+            }
+        }
+    }
+    return j;
+}
+
+CharacterDevice *console_init(BOOL allow_ctrlc)
+{
+    CharacterDevice *dev;
+    //STDIODevice *s;
+    //struct sigaction sig;
+
+    //term_init(allow_ctrlc);
+
+    dev = mallocz(sizeof(*dev));
+    //s = mallocz(sizeof(*s));
+    //s->stdin_fd = 0;
+    /* Note: the glibc does not properly tests the return value of
+       write() in printf, so some messages on stdout may be lost */
+    //fcntl(s->stdin_fd, F_SETFL, O_NONBLOCK);
+
+    //s->resize_pending = FALSE;
+    //global_stdio_device = s;
+    
+    /* use a signal to get the host terminal resize events */
+    //sig.sa_handler = term_resize_handler;
+    //sigemptyset(&sig.sa_mask);
+    //sig.sa_flags = 0;
+    //sigaction(SIGWINCH, &sig, NULL);
+    
+    //dev->opaque = s;
+	dev->opaque = 1;
+    dev->write_data = console_write;
+    dev->read_data = console_read;
+    return dev;
+}
 
 #endif /* !_WIN32 */
 
@@ -818,17 +911,14 @@ int main(int argc, char **argv)
 #ifdef CONFIG_SDL
     if (p->display_device) {
         sdl_init(p->width, p->height);
-		#ifdef _WIN32
-		fprintf(stderr, "Console not supported yet\n");
-		#else
 		p->console = console_init(TRUE);
-		#endif
     } else
 #endif
     {
 #ifdef _WIN32
-        fprintf(stderr, "Console not supported yet\n");
-        exit(1);
+        fprintf(stderr, "Console support is EXPERIMENTAL\n");
+		 p->console = console_init(0);
+        //exit(1);
 #else
         p->console = console_init(allow_ctrlc);
 #endif
