@@ -3,7 +3,12 @@
 
 #ifdef CONFIG_SLIRP
 
+#ifdef _WIN32
+#include <winsock2.h>
+#else
 #include <netinet/in.h>
+#endif
+
 
 struct Slirp;
 typedef struct Slirp Slirp;

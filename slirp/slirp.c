@@ -23,6 +23,18 @@
  */
 #include "slirp.h"
 
+#ifdef _WIN32
+#ifndef FIX_ATON
+#define FIX_ATON
+#include <winsock.h>
+int inet_aton(const char *cp, struct in_addr *addr)
+{
+	addr->s_addr = inet_addr(cp);
+	return (addr->s_addr == INADDR_NONE) ? 0 : 1;
+}
+#endif
+#endif
+
 /* host loopback address */
 struct in_addr loopback_addr;
 

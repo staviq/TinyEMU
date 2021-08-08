@@ -818,7 +818,11 @@ int main(int argc, char **argv)
 #ifdef CONFIG_SDL
     if (p->display_device) {
         sdl_init(p->width, p->height);
-        p->console = console_init(TRUE);
+		#ifdef _WIN32
+		fprintf(stderr, "Console not supported yet\n");
+		#else
+		p->console = console_init(TRUE);
+		#endif
     } else
 #endif
     {

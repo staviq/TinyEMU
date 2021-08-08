@@ -6,6 +6,13 @@
 #include "slirp_config.h"
 
 #ifdef _WIN32
+struct iovec {
+	void *iov_base;
+	size_t iov_len;
+};
+#endif
+
+#ifdef _WIN32
 # include <inttypes.h>
 
 typedef char *caddr_t;

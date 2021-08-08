@@ -24,14 +24,14 @@
 
 # if set, network filesystem is enabled. libcurl and libcrypto
 # (openssl) must be installed.
-CONFIG_FS_NET=y
+#CONFIG_FS_NET=y
 # SDL support (optional)
 CONFIG_SDL=y
 # if set, compile the 128 bit emulator. Note: the 128 bit target does
 # not compile if gcc does not support the int128 type (32 bit hosts).
-CONFIG_INT128=y
+#CONFIG_INT128=y
 # build x86 emulator
-CONFIG_X86EMU=y
+#CONFIG_X86EMU=y
 # macOS build
 #CONFIG_MACOS=y
 # iOS build
@@ -39,7 +39,9 @@ CONFIG_X86EMU=y
 # iOS simulator build
 #CONFIG_IOS_SIMULATOR=
 # win32 build (not usable yet)
-#CONFIG_WIN32=y
+CONFIG_WIN32=y
+# win64 build (testing)
+#CONFIG_WINUCRT64=y
 # user space network redirector
 CONFIG_SLIRP=y
 # if set, you can pass a compressed cpio archive as initramfs. zlib
@@ -51,7 +53,7 @@ CONFIG_IOS=y
 endif
 
 ifdef CONFIG_WIN32
-CROSS_PREFIX=i686-w64-mingw32-
+CROSS_PREFIX=x86_64-w64-mingw32-
 EXE=.exe
 else
 CROSS_PREFIX=
@@ -112,28 +114,35 @@ EMU_OBJS+=$(addprefix slirp/, bootp.o ip_icmp.o mbuf.o slirp.o tcp_output.o cksu
 endif # CONFIG_SLIRP
 
 ifndef CONFIG_WIN32
-EMU_OBJS+=fs_disk.o
-ifndef CONFIG_MACOS
-ifndef CONFIG_IOS
-EMU_LIBS=-lrt
-endif # CONFIG_IOS
-endif # CONFIG_MACOS
+	EMU_OBJS+=fs_disk.o
+	ifndef CONFIG_MACOS
+		ifndef CONFIG_IOS
+			EMU_LIBS=-lrt
+		endif # CONFIG_IOS
+	endif # CONFIG_MACOS
 endif # CONFIG_WIN32
 ifdef CONFIG_FS_NET
-override CFLAGS+=-DCONFIG_FS_NET
-EMU_OBJS+=fs_net.o fs_wget.o fs_utils.o block_net.o
-EMU_LIBS+=-lcurl -lcrypto
-ifdef CONFIG_WIN32
-EMU_LIBS+=-lwsock32
-endif # CONFIG_WIN32
+	override CFLAGS+=-DCONFIG_FS_NET
+	EMU_OBJS+=fs_net.o fs_wget.o fs_utils.o block_net.o
+	EMU_LIBS+=-lcurl -lcrypto
+	ifdef CONFIG_WIN32
+		EMU_LIBS+=-lwsock32
+		EMU_LIBS+=-lws2_32
+	endif # CONFIG_WIN32
 endif # CONFIG_FS_NET
 ifdef CONFIG_SDL
-EMU_LIBS+=-lSDL2
-EMU_OBJS+=sdl.o
-override CFLAGS+=-DCONFIG_SDL
-ifdef CONFIG_WIN32
-LDFLAGS+=-mwindows
+	EMU_LIBS+=-lSDL2
+	EMU_OBJS+=sdl.o
+	override CFLAGS+=-DCONFIG_SDL
+	ifdef CONFIG_WIN32
+	LDFLAGS+=-mwindows
+	endif
 endif
+
+ifdef CONFIG_WIN32
+	EMU_LIBS+=-lwsock32
+	EMU_LIBS+=-lws2_32
+	EMU_LIBS+=-lIphlpapi
 endif
 
 EMU_OBJS+=riscv_machine.o softfp.o riscv_cpu32.o riscv_cpu64.o

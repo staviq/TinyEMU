@@ -29,6 +29,11 @@
 
 #include "cutils.h"
 
+#define MAX(a,b) \
+	({ __typeof__ (a) _a = (a); \
+	__typeof__ (b) _b = (b); \
+	_a > _b ? _a : _b; })
+
 typedef struct __attribute__((packed)) {
     uint8_t magic[4];
     uint8_t class;
