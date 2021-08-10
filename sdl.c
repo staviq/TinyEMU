@@ -30,7 +30,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
-#include <SDL2/SDL.h>
+#include "openglrenderer.h"
 
 #include "cutils.h"
 #include "virtio.h"
@@ -39,6 +39,7 @@
 #define KEYCODE_MAX 127
 
 static SDL_Window *window;
+static SDL_GLContext context;
 static SDL_Renderer *renderer;
 static SDL_Texture *fb_texture;
 static int window_width, window_height, fb_width, fb_height;
@@ -66,6 +67,8 @@ static void sdl_update_fb_texture(FBDevice *fb_dev)
             fprintf(stderr, "Could not create SDL framebuffer texture\n");
             exit(1);
         }
+		
+		generateTex(fb_dev->width, fb_dev->height);
     }
 }
 
@@ -363,18 +366,24 @@ void sdl_refresh(VirtMachine *m)
     if (!m->fb_dev)
         return;
 
-    sdl_update_fb_texture(m->fb_dev);
+    sdl_update_fb_texture(m->fb_dev); // checking for size change and recreating texture if so.
 
     int dirty = 0;
     m->fb_dev->refresh(m->fb_dev, sdl_update, &dirty);
 
     if (dirty) {
-        SDL_UpdateTexture(fb_texture, NULL,
+        /*SDL_UpdateTexture(fb_texture, NULL,
                           m->fb_dev->fb_data,
                           m->fb_dev->stride);
         SDL_RenderClear(renderer);
         SDL_RenderCopy(renderer, fb_texture, NULL, NULL);
-        SDL_RenderPresent(renderer);
+        SDL_RenderPresent(renderer);*/
+		
+		updateTex( m->fb_dev->width, m->fb_dev->height, m->fb_dev->fb_data );
+		
+		render();
+		
+		SDL_GL_SwapWindow( window );
     }
 
     while (SDL_PollEvent(ev)) {
@@ -413,12 +422,52 @@ void sdl_init(int width, int height)
         fprintf(stderr, "Could not initialize SDL - exiting\n");
         exit(1);
     }
-
-    int result = SDL_CreateWindowAndRenderer(width, height, 0, &window, &renderer);
+	
+	//Use OpenGL 3.1 core
+	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 3 );
+	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
+	SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
+	
+    int result = SDL_CreateWindowAndRenderer(width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN, &window, &renderer);
     if (result == -1) {
-        fprintf(stderr, "Could not create SDL window\n");
-        exit(1);
+		fprintf(stderr, "Could not create SDL window\n");
+		exit(1);
     }
+	else
+	{
+		//Create context
+		context = SDL_GL_CreateContext( window );
+		if( context == NULL )
+		{
+			printf( "OpenGL context could not be created! SDL Error: %s\n", SDL_GetError() );
+			fprintf(stderr, "Could not create GL Context\n");
+			exit(1);
+		}
+		else
+		{
+			//Initialize GLEW
+			glewExperimental = GL_TRUE; 
+			GLenum glewError = glewInit();
+			if( glewError != GLEW_OK )
+			{
+				printf( "Error initializing GLEW! %s\n", glewGetErrorString( glewError ) );
+			}
+
+			//Use Vsync
+			if( SDL_GL_SetSwapInterval( 1 ) < 0 )
+			{
+				printf( "Warning: Unable to set VSync! SDL Error: %s\n", SDL_GetError() );
+			}
+
+			//Initialize OpenGL
+			if( !initGL() )
+			{
+				printf( "Unable to initialize OpenGL!\n" );
+				fprintf(stderr, "Could not create OpenGL\n");
+				exit(1);
+			}
+		}
+	}
 
     SDL_SetWindowTitle(window, "TinyEMU");
 
