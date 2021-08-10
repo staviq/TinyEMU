@@ -19,6 +19,6 @@ void printProgramLog( GLuint program );
 void printShaderLog( GLuint shader );
 void generateTex(uint32_t w, uint32_t h);
 void updateTex(uint32_t w, uint32_t h, void *data);
-void render();
+void render( uint32_t w, uint32_t h );
 
 #endif

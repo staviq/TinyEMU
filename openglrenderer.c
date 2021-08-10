@@ -20,11 +20,12 @@ void generateTex(uint32_t w, uint32_t h)
 
 void updateTex( uint32_t w, uint32_t h, void *data )
 {
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+	glTexImage2D  (GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, data);
 	//glGenerateMipmap(GL_TEXTURE_2D);
 }
 
-void render()
+void render( uint32_t w, uint32_t h )
 {
 	//Clear color buffer
 	//glClearColor( 0.0, 0.0, 0.0, 0.0 );
@@ -35,6 +36,12 @@ void render()
 	
 	//Bind program
 	glUseProgram( gProgramID );
+	
+	GLint testcolor = glGetUniformLocation(gProgramID, "testcolor");
+	glUniform3f(testcolor, 1.0, 0.0, 0.0);
+	
+	GLint resolution = glGetUniformLocation(gProgramID, "resolution");
+	glUniform2f(resolution, w, h);
 
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -277,12 +284,21 @@ uint8_t initGL()
 				glEnable(GL_BLEND);
 				glClearColor( 0.f, 0.f, 0.f, 0.f );
 
+				/*
 				static float vertices[] = {
 					// positions          // colors           // texture coords
 					 0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
 					 0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
 					-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom left
 					-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // top left 
+				};
+				*/
+				static float vertices[] = {
+					// positions          // colors           // texture coords
+					 1.0f,  1.0f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 0.0f, // top right
+					 1.0f, -1.0f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 1.0f, // bottom right
+					-1.0f, -1.0f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 1.0f, // bottom left
+					-1.0f,  1.0f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 0.0f  // top left 
 				};
 				static unsigned int indices[] = {
 					0, 1, 3, // first triangle

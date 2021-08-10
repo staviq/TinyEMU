@@ -381,7 +381,7 @@ void sdl_refresh(VirtMachine *m)
 		
 		updateTex( m->fb_dev->width, m->fb_dev->height, m->fb_dev->fb_data );
 		
-		render();
+		render( m->fb_dev->width, m->fb_dev->height );
 		
 		SDL_GL_SwapWindow( window );
     }
