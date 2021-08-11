@@ -1,15 +1,29 @@
 #include "openglrenderer.h"
 
-GLuint gProgramID = 0;
-//GLint gVertexPos2DLocation = -1;
+GLuint gProgramIDd = 0;
+GLuint gProgramID0 = 0;
+GLuint gProgramID1 = 0;
+GLuint gProgramID2 = 0;
+GLuint gProgramID3 = 0;
 unsigned int VBO, VAO, EBO;
-unsigned int texture1;
+unsigned int iChannel0;
+unsigned int iChannel1;
+unsigned int iChannel2;
+unsigned int iChannel3;
+unsigned int fBuff0;
+unsigned int fBuff1;
+unsigned int fBuff2;
+unsigned int fBuff3;
+unsigned int rBuff0;
+unsigned int rBuff1;
+unsigned int rBuff2;
+unsigned int rBuff3;
 
 void generateTex(uint32_t w, uint32_t h)
 {
-	glDeleteTextures(1, &texture1);
-	glGenTextures(1, &texture1);
-	glBindTexture(GL_TEXTURE_2D, texture1); 
+	glDeleteTextures(1, &iChannel0);
+	glGenTextures(1, &iChannel0);
+	glBindTexture(GL_TEXTURE_2D, iChannel0); 
 	// set the texture wrapping parameters
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -27,26 +41,30 @@ void updateTex( uint32_t w, uint32_t h, void *data )
 
 void render( uint32_t w, uint32_t h )
 {
+	static uint8_t faketime = 0;
+	
 	//Clear color buffer
-	//glClearColor( 0.0, 0.0, 0.0, 0.0 );
+	glClearColor( 0.0, 0.0, 0.0, 0.0 );
 	glClear( GL_COLOR_BUFFER_BIT );
 	
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture1);
+	glBindTexture(GL_TEXTURE_2D, iChannel0);
 	
 	//Bind program
-	glUseProgram( gProgramID );
+	glUseProgram( gProgramIDd );
 	
-	GLint testcolor = glGetUniformLocation(gProgramID, "testcolor");
-	glUniform3f(testcolor, 1.0, 0.0, 0.0);
+	GLint debugu = glGetUniformLocation(gProgramIDd, "debug");
+	glUniform3f(debugu, 1.0, 0.0, 0.0);
 	
-	GLint resolution = glGetUniformLocation(gProgramID, "resolution");
+	GLint resolution = glGetUniformLocation(gProgramIDd, "iResolution");
 	glUniform2f(resolution, w, h);
+	
+	GLint time = glGetUniformLocation(gProgramIDd, "iTime");
+	glUniform1f(time, faketime++);
 
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-	//Unbind program
+	glBindVertexArray(0);
 	glUseProgram( 0 );
 }
 
@@ -106,229 +124,111 @@ char * file_get_contents( const char * filename )
 	return buf;
 }
 
-GLuint compileShader(const char* source, GLuint shaderType, const char* name) {
-	fprintf( stderr, "Compiling shader: %s\r\n", name );
-	//fprintf( stderr, "================================================================\r\n" );
-	//fprintf( stderr, "%s\r\n", source );
-	//fprintf( stderr, "================================================================\r\n" );
-	// Create ID for shader
-	GLuint result = glCreateShader(shaderType);
-	// Define shader text
-	glShaderSource(result, 1, &source, NULL);
-	// Compile shader
-	glCompileShader(result);
-
+GLuint compileShader(const char* source, GLuint shaderType, const char* name)
+{
+	GLuint shader = glCreateShader( shaderType );
+	glShaderSource( shader, 1, &source, NULL );
+	
+	glCompileShader( shader );
+	
 	//Check vertex shader for errors
 	GLint shaderCompiled = GL_FALSE;
-	glGetShaderiv( result, GL_COMPILE_STATUS, &shaderCompiled );
-	if( shaderCompiled != GL_TRUE ) {
-		fprintf( stderr, "Error compiling shader: %d istrue %d isfalse %d isshader %d !\r\n", result, shaderCompiled == GL_TRUE, shaderCompiled == GL_FALSE, glIsShader( result ) );
-		GLint logLength;
-		glGetShaderiv(result, GL_INFO_LOG_LENGTH, &logLength);
-		if (logLength > 0)
-		{
-			GLchar *log = (GLchar*)malloc(logLength);
-			glGetShaderInfoLog(result, logLength, &logLength, log);
-			fprintf( stderr, "Shader compile log: %s\r\n", log );
-			free(log);
-		}
-		glDeleteShader(result);
-		result = 0;
-	} else {
-		fprintf( stderr, "Shader compilado correctamente. Id = %d\r\n", result );
+	glGetShaderiv( shader, GL_COMPILE_STATUS, &shaderCompiled );
+	if( shaderCompiled != GL_TRUE )
+	{
+		fprintf( stderr, "Unable to compile shader %s!\n", name );
+		printShaderLog( shader );
+		exit(-15);
 	}
-	return result;
+	
+	return shader;
 }
 
-GLuint compileProgram(const char* vtxFile, const char* fragFile) {
-	GLuint programId = 0;
-	GLuint vtxShaderId, fragShaderId;
+GLuint compileProgram(const char* vertFile, const char* fragFile)
+{
+	unsigned int program = glCreateProgram();
+	
+	char * vertSource = file_get_contents( vertFile );
+	char * fragSource = file_get_contents( fragFile );
+	
+	GLuint vertexShader   = compileShader( vertSource, GL_VERTEX_SHADER,   vertFile );
+	GLuint fragmentShader = compileShader( fragSource, GL_FRAGMENT_SHADER, fragFile );
+	
+	glAttachShader( program, vertexShader   );
+	glAttachShader( program, fragmentShader );
+	
+	//Link program
+	glLinkProgram( program );
 
-	programId = glCreateProgram();
-
-	char * vtxsource = file_get_contents( vtxFile );
-	if( vtxsource != NULL )
+	//Check for errors
+	GLint programSuccess = GL_TRUE;
+	glGetProgramiv( program, GL_LINK_STATUS, &programSuccess );
+	if( programSuccess != GL_TRUE )
 	{
-		vtxShaderId = compileShader(vtxsource, GL_VERTEX_SHADER, vtxFile);
-		//free( vtxsource );
+		fprintf( stderr, "Error linking program %d!\n", program );
+		printProgramLog( program );
+		exit(-15);
 	}
-	else
-	{
-		fprintf( stderr, "Error vtx processing shader %s\r\n", vtxFile );
-		exit(-10);
-	}
-
-	char * fragsource = file_get_contents( fragFile );
-	if( fragsource != NULL )
-	{
-		fragShaderId = compileShader(fragsource, GL_FRAGMENT_SHADER, fragFile);
-		//free( fragsource );
-	}
-	else
-	{
-		fprintf( stderr, "Error frg processing shader %s\r\n", vtxFile );
-		exit(-10);
-	}
-
-	if(vtxShaderId && fragShaderId) {
-		// Associate shader with program
-		glAttachShader(programId, vtxShaderId);
-		glAttachShader(programId, fragShaderId);
-		glLinkProgram(programId);
-		glValidateProgram(programId);
-
-		// Check the status of the compile/link
-		GLint logLen;
-		glGetProgramiv(programId, GL_INFO_LOG_LENGTH, &logLen);
-		if(logLen > 0) {
-			char* log = (char*) malloc(logLen * sizeof(char));
-			// Show any errors as appropriate
-			glGetProgramInfoLog(programId, logLen, &logLen, log);
-			//std::cout << "Prog Info Log: " << std::endl << log << std::endl;
-			fprintf( stderr, "Prog Info Log: \r\n%s\r\n", log );
-			free(log);
-		}
-	}
-	if(vtxShaderId) {
-		glDeleteShader(vtxShaderId);
-	}
-	if(fragShaderId) {
-		glDeleteShader(fragShaderId);
-	}
-	return programId;
+	
+	return program;
 }
 
 uint8_t initGL()
 {
+	fprintf( stderr, "GL INIT\r\n" ); fflush( stderr );
+	
 	//Success flag
 	uint8_t success = 1;
 
 	//Generate program
-	gProgramID = glCreateProgram();
+	gProgramIDd = compileProgram( "shaderpd.vert", "shaderpd.frag" );
 
-	//Create vertex shader
-	GLuint vertexShader = glCreateShader( GL_VERTEX_SHADER );
+	//Initialize clear color
+	glEnable(GL_BLEND);
+	glClearColor( 0.f, 0.f, 0.f, 0.f );
 
-	//Get vertex source
-	const GLchar* vertexShaderSource = (const GLchar*)file_get_contents( "shader.vert" );/*[] =
-	{
-		"#version 140\nin vec2 LVertexPos2D; void main() { gl_Position = vec4( LVertexPos2D.x, LVertexPos2D.y, 0, 1 ); }"
-	};*/
+	/*
+	static float vertices[] = {
+		// positions          // colors           // texture coords
+		 0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
+		 0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
+		-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom left
+		-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // top left 
+	};
+	*/
+	static float vertices[] = {
+		// positions          // colors           // texture coords
+		 1.0f,  1.0f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 0.0f, // top right
+		 1.0f, -1.0f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 1.0f, // bottom right
+		-1.0f, -1.0f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 1.0f, // bottom left
+		-1.0f,  1.0f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 0.0f  // top left 
+	};
+	static unsigned int indices[] = {
+		0, 1, 3, // first triangle
+		1, 2, 3  // second triangle
+	};
+	//unsigned int VBO, VAO, EBO;
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+	glGenBuffers(1, &EBO);
 
-	//Set vertex source
-	glShaderSource( vertexShader, 1, &vertexShaderSource, NULL );
+	glBindVertexArray(VAO);
 
-	//Compile vertex source
-	glCompileShader( vertexShader );
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	//Check vertex shader for errors
-	GLint vShaderCompiled = GL_FALSE;
-	glGetShaderiv( vertexShader, GL_COMPILE_STATUS, &vShaderCompiled );
-	if( vShaderCompiled != GL_TRUE )
-	{
-		printf( "Unable to compile vertex shader %d!\n", vertexShader );
-		printShaderLog( vertexShader );
-        success = 0;
-	}
-	else
-	{
-		//Attach vertex shader to program
-		glAttachShader( gProgramID, vertexShader );
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-
-		//Create fragment shader
-		GLuint fragmentShader = glCreateShader( GL_FRAGMENT_SHADER );
-
-		//Get fragment source
-		const GLchar* fragmentShaderSource = (const GLchar*)file_get_contents( "shader.frag" );/*[] =
-		{
-			"#version 140\nout vec4 LFragment; void main() { LFragment = vec4( 1.0, 1.0, 1.0, 1.0 ); }"
-		};*/
-
-		//Set fragment source
-		glShaderSource( fragmentShader, 1, &fragmentShaderSource, NULL );
-
-		//Compile fragment source
-		glCompileShader( fragmentShader );
-
-		//Check fragment shader for errors
-		GLint fShaderCompiled = GL_FALSE;
-		glGetShaderiv( fragmentShader, GL_COMPILE_STATUS, &fShaderCompiled );
-		if( fShaderCompiled != GL_TRUE )
-		{
-			printf( "Unable to compile fragment shader %d!\n", fragmentShader );
-			printShaderLog( fragmentShader );
-			success = 0;
-		}
-		else
-		{
-			//Attach fragment shader to program
-			glAttachShader( gProgramID, fragmentShader );
-
-
-			//Link program
-			glLinkProgram( gProgramID );
-
-			//Check for errors
-			GLint programSuccess = GL_TRUE;
-			glGetProgramiv( gProgramID, GL_LINK_STATUS, &programSuccess );
-			if( programSuccess != GL_TRUE )
-			{
-				printf( "Error linking program %d!\n", gProgramID );
-				printProgramLog( gProgramID );
-				success = 0;
-			}
-			else
-			{
-				//Initialize clear color
-				glEnable(GL_BLEND);
-				glClearColor( 0.f, 0.f, 0.f, 0.f );
-
-				/*
-				static float vertices[] = {
-					// positions          // colors           // texture coords
-					 0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
-					 0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
-					-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom left
-					-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // top left 
-				};
-				*/
-				static float vertices[] = {
-					// positions          // colors           // texture coords
-					 1.0f,  1.0f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 0.0f, // top right
-					 1.0f, -1.0f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 1.0f, // bottom right
-					-1.0f, -1.0f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 1.0f, // bottom left
-					-1.0f,  1.0f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 0.0f  // top left 
-				};
-				static unsigned int indices[] = {
-					0, 1, 3, // first triangle
-					1, 2, 3  // second triangle
-				};
-				//unsigned int VBO, VAO, EBO;
-				glGenVertexArrays(1, &VAO);
-				glGenBuffers(1, &VBO);
-				glGenBuffers(1, &EBO);
-
-				glBindVertexArray(VAO);
-
-				glBindBuffer(GL_ARRAY_BUFFER, VBO);
-				glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-				glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-				// position attribute
-				glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-				glEnableVertexAttribArray(0);
-				// color attribute
-				glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-				glEnableVertexAttribArray(1);
-				// texture coord attribute
-				glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-				glEnableVertexAttribArray(2);
-			}
-		}
-	}
+	// position attribute
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+	// color attribute
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+	// texture coord attribute
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(2);
 	
 	return success;
 }

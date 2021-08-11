@@ -6,14 +6,28 @@
 #include <SDL_opengl.h>
 #include <gl\glu.h>
 
-extern GLuint gProgramID;
-//extern GLint gVertexPos2DLocation;
+extern GLuint gProgramIDd;
+extern GLuint gProgramID0;
+extern GLuint gProgramID1;
+extern GLuint gProgramID2;
+extern GLuint gProgramID3;
 extern unsigned int VBO, VAO, EBO;
-extern unsigned int texture1;
+extern unsigned int iChannel0;
+extern unsigned int iChannel1;
+extern unsigned int iChannel2;
+extern unsigned int iChannel3;
+extern unsigned int fBuff0;
+extern unsigned int fBuff1;
+extern unsigned int fBuff2;
+extern unsigned int fBuff3;
+extern unsigned int rBuff0;
+extern unsigned int rBuff1;
+extern unsigned int rBuff2;
+extern unsigned int rBuff3;
 
 char * file_get_contents( const char * filename );
 GLuint compileShader(const char* source, GLuint shaderType, const char* name);
-GLuint compileProgram(const char* vtxFile, const char* fragFile);
+GLuint compileProgram(const char* vertFile, const char* fragFile);
 uint8_t initGL();
 void printProgramLog( GLuint program );
 void printShaderLog( GLuint shader );

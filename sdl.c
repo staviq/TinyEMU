@@ -40,15 +40,26 @@
 
 static SDL_Window *window;
 static SDL_GLContext context;
-static SDL_Renderer *renderer;
-static SDL_Texture *fb_texture;
+//static SDL_Renderer *renderer;
+//static SDL_Texture *fb_texture;
 static int window_width, window_height, fb_width, fb_height;
 static SDL_Cursor *sdl_cursor_hidden;
 static uint8_t key_pressed[KEYCODE_MAX + 1];
 
 static void sdl_update_fb_texture(FBDevice *fb_dev)
 {
-    if (!fb_texture ||
+	if( fb_width != fb_dev->width || fb_height != fb_dev->height )
+	{
+		fprintf( stderr, "GEN TEX\r\n" ); fflush( stderr );
+		
+		generateTex(fb_dev->width, fb_dev->height);
+		
+		fb_width = fb_dev->width;
+		fb_height = fb_dev->height;
+	}
+    
+	/*
+	if (!fb_texture ||
         fb_width != fb_dev->width ||
         fb_height != fb_dev->height) {
 
@@ -68,8 +79,8 @@ static void sdl_update_fb_texture(FBDevice *fb_dev)
             exit(1);
         }
 		
-		generateTex(fb_dev->width, fb_dev->height);
     }
+	*/
 }
 
 static void sdl_update(FBDevice *fb_dev, void *opaque,
@@ -415,6 +426,8 @@ static void sdl_hide_cursor(void)
 
 void sdl_init(int width, int height)
 {
+	fprintf( stderr, "SDL INIT\r\n" ); fflush( stderr );
+	
     window_width = width;
     window_height = height;
 
@@ -428,8 +441,9 @@ void sdl_init(int width, int height)
 	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
 	SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
 	
-    int result = SDL_CreateWindowAndRenderer(width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN, &window, &renderer);
-    if (result == -1) {
+    //int result = SDL_CreateWindowAndRenderer(width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN, &window, &renderer);
+	window = SDL_CreateWindow( "TinyEMU", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN );
+    if (window == NULL) {
 		fprintf(stderr, "Could not create SDL window\n");
 		exit(1);
     }
@@ -469,7 +483,7 @@ void sdl_init(int width, int height)
 		}
 	}
 
-    SDL_SetWindowTitle(window, "TinyEMU");
+    //SDL_SetWindowTitle(window, "TinyEMU");
 
     sdl_hide_cursor();
 }
