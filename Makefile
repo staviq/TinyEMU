@@ -39,7 +39,11 @@ CONFIG_SDL=y
 # iOS simulator build
 #CONFIG_IOS_SIMULATOR=
 # win32 build (not usable yet)
+ifeq ($(OS),Windows_NT)
 CONFIG_WIN32=y
+else
+#CONFIG_WIN32=y
+endif
 # win64 build (testing)
 #CONFIG_WINUCRT64=y
 # user space network redirector
