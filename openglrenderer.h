@@ -6,24 +6,19 @@
 #include <SDL_opengl.h>
 #include <gl\glu.h>
 
+#define GL_BUFFERS (1)
 extern GLuint gProgramIDd;
 extern GLuint gProgramID0;
 extern GLuint gProgramID1;
 extern GLuint gProgramID2;
 extern GLuint gProgramID3;
-extern unsigned int VBO, VAO, EBO;
-extern unsigned int iChannel0;
-extern unsigned int iChannel1;
-extern unsigned int iChannel2;
-extern unsigned int iChannel3;
-extern unsigned int fBuff0;
-extern unsigned int fBuff1;
-extern unsigned int fBuff2;
-extern unsigned int fBuff3;
-extern unsigned int rBuff0;
-extern unsigned int rBuff1;
-extern unsigned int rBuff2;
-extern unsigned int rBuff3;
+extern GLuint VBO, VAO, EBO;
+extern GLuint iChannelA;
+extern GLuint iChannelB;
+extern GLuint iChannel[GL_BUFFERS];
+extern GLint  fBuffA;
+extern GLuint fBuff[GL_BUFFERS];
+extern GLuint rBuff[GL_BUFFERS];
 
 char * file_get_contents( const char * filename );
 GLuint compileShader(const char* source, GLuint shaderType, const char* name);

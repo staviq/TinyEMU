@@ -5,31 +5,46 @@ GLuint gProgramID0 = 0;
 GLuint gProgramID1 = 0;
 GLuint gProgramID2 = 0;
 GLuint gProgramID3 = 0;
-unsigned int VBO, VAO, EBO;
-unsigned int iChannel0;
-unsigned int iChannel1;
-unsigned int iChannel2;
-unsigned int iChannel3;
-unsigned int fBuff0;
-unsigned int fBuff1;
-unsigned int fBuff2;
-unsigned int fBuff3;
-unsigned int rBuff0;
-unsigned int rBuff1;
-unsigned int rBuff2;
-unsigned int rBuff3;
+GLuint VBO, VAO, EBO;
+GLuint iChannelA;
+GLuint iChannelB;
+GLuint iChannel[GL_BUFFERS];
+GLint  fBuffA;
+GLuint fBuff[GL_BUFFERS];
+GLuint rBuff[GL_BUFFERS];
 
 void generateTex(uint32_t w, uint32_t h)
 {
-	glDeleteTextures(1, &iChannel0);
-	glGenTextures(1, &iChannel0);
-	glBindTexture(GL_TEXTURE_2D, iChannel0); 
+	// only called if screen size changed
+	
+	glDeleteTextures(1, &iChannelA);
+	glGenTextures(1, &iChannelA);
+	glBindTexture(GL_TEXTURE_2D, iChannelA); 
 	// set the texture wrapping parameters
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	// set texture filtering parameters
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	
+	
+	glDeleteTextures( GL_BUFFERS, iChannel );
+	glGenTextures( GL_BUFFERS, iChannel );
+	glDeleteFramebuffers( GL_BUFFERS, fBuff );
+	glGenFramebuffers( GL_BUFFERS, fBuff );
+	
+	for( int i=0; i< GL_BUFFERS; ++i )
+	{
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fBuff[i]);
+		glBindTexture(GL_TEXTURE_2D, iChannel[i]);
+		
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0 );
+		
+		glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, iChannel[i], 0 );
+	}
+	
+	glBindTexture( GL_TEXTURE_2D, 0 );
+	glBindFramebuffer( GL_FRAMEBUFFER, fBuffA );
 }
 
 void updateTex( uint32_t w, uint32_t h, void *data )
@@ -48,7 +63,7 @@ void render( uint32_t w, uint32_t h )
 	glClear( GL_COLOR_BUFFER_BIT );
 	
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, iChannel0);
+	glBindTexture(GL_TEXTURE_2D, iChannelA);
 	
 	//Bind program
 	glUseProgram( gProgramIDd );
