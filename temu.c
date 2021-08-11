@@ -58,6 +58,8 @@
 #include "slirp/libslirp.h"
 #endif
 
+uint8_t sdl_fullscreen = 1;
+
 #ifndef _WIN32
 
 typedef struct {
@@ -758,7 +760,7 @@ int main(int argc, char **argv)
     BOOL allow_ctrlc;
     BlockDeviceModeEnum drive_mode;
     VirtMachineParams p_s, *p = &p_s;
-
+	
     ram_size = -1;
     allow_ctrlc = FALSE;
     (void)allow_ctrlc;
@@ -767,7 +769,7 @@ int main(int argc, char **argv)
     cmdline = NULL;
     build_preload_file = NULL;
     for(;;) {
-        c = getopt_long_only(argc, argv, "hm:", options, &option_index);
+        c = getopt_long_only(argc, argv, "fwhm:", options, &option_index);
         if (c == -1)
             break;
         switch(c) {
@@ -795,6 +797,12 @@ int main(int argc, char **argv)
                 fprintf(stderr, "unknown option index: %d\n", option_index);
                 exit(1);
             }
+            break;
+		case 'f':
+            sdl_fullscreen = 1;
+            break;
+		case 'w':
+            sdl_fullscreen = 0;
             break;
         case 'h':
             help();
@@ -910,7 +918,7 @@ int main(int argc, char **argv)
     
 #ifdef CONFIG_SDL
     if (p->display_device) {
-        sdl_init(p->width, p->height);
+        sdl_init(&p->width, &p->height);
 		p->console = console_init(TRUE);
     } else
 #endif

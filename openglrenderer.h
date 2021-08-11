@@ -6,8 +6,11 @@
 #include <SDL_opengl.h>
 #include <gl\glu.h>
 
-#define GL_BUFFERS (1)
-extern GLuint gProgramIDd;
+extern uint8_t sdl_fullscreen;
+
+#define GL_BUFFERS (2)
+extern GLuint gProgramIDd0;
+extern GLuint gProgramIDd1;
 extern GLuint gProgramID0;
 extern GLuint gProgramID1;
 extern GLuint gProgramID2;

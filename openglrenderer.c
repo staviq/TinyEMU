@@ -1,6 +1,7 @@
 #include "openglrenderer.h"
 
-GLuint gProgramIDd = 0;
+GLuint gProgramIDd0 = 0;
+GLuint gProgramIDd1 = 0;
 GLuint gProgramID0 = 0;
 GLuint gProgramID1 = 0;
 GLuint gProgramID2 = 0;
@@ -24,8 +25,8 @@ void generateTex(uint32_t w, uint32_t h)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	// set texture filtering parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	
 	
 	glDeleteTextures( GL_BUFFERS, iChannel );
@@ -44,7 +45,7 @@ void generateTex(uint32_t w, uint32_t h)
 		glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 		glBindRenderbuffer(GL_RENDERBUFFER, rBuff[i]);
 		
-		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0 );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, w * (sdl_fullscreen?2:1), h * (sdl_fullscreen?2:1), 0, GL_RGBA, GL_UNSIGNED_BYTE, 0 );
 		//glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL );
 		//glTexImage2D  (GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, NULL);
 		glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, iChannel[i], 0 );
@@ -69,9 +70,19 @@ void generateTex(uint32_t w, uint32_t h)
 void updateTex( uint32_t w, uint32_t h, void *data )
 {
 	glBindTexture(GL_TEXTURE_2D, iChannelA);
-	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-	glTexImage2D  (GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, data);
-	//glGenerateMipmap(GL_TEXTURE_2D);
+	if( sdl_fullscreen )
+	{
+		//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glTexImage2D  (GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, data);
+		//glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+	{
+		//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glTexImage2D  (GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, data);
+		//glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	
 	glBindTexture( GL_TEXTURE_2D, 0 );
 }
 
@@ -94,11 +105,36 @@ void render( uint32_t w, uint32_t h )
 	glBindTexture(GL_TEXTURE_2D, iChannelA);
 	
 	//Bind program
-	glUseProgram( gProgramIDd );
+	glUseProgram( gProgramID0 );
 	
-	glUniform4f( glGetUniformLocation(gProgramIDd, "debug") , 0.25, 0.5, 0.0, 1.0);
-	glUniform2f( glGetUniformLocation(gProgramIDd, "iResolution") , w, h);
-	glUniform1f( glGetUniformLocation(gProgramIDd, "iTime") , faketime++);
+	glUniform4f( glGetUniformLocation(gProgramID0, "debug") , 0.25, 0.5, 0.0, 1.0);
+	glUniform2f( glGetUniformLocation(gProgramID0, "iResolution") , w, h);
+	glUniform1f( glGetUniformLocation(gProgramID0, "iTime") , faketime++);
+
+	glBindVertexArray(VAO);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+	glUseProgram( 0 );
+	
+	//---
+	
+	glBindFramebuffer( GL_FRAMEBUFFER, fBuff[1] );
+	//glBindFramebuffer( GL_FRAMEBUFFER, fBuffA );
+	glDisable(GL_DEPTH_TEST);
+	
+	//Clear color buffer
+	glClearColor( 1.0, 1.0, 1.0, 1.0 );
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, iChannel[0]);
+	
+	//Bind program
+	glUseProgram( gProgramID1 );
+	
+	glUniform4f( glGetUniformLocation(gProgramID1, "debug") , 0.5, 0.5, 0.0, 0.25);
+	glUniform2f( glGetUniformLocation(gProgramID1, "iResolution") , w, h);
+	glUniform1f( glGetUniformLocation(gProgramID1, "iTime") , faketime++);
 
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -116,14 +152,14 @@ void render( uint32_t w, uint32_t h )
 	
 	glActiveTexture(GL_TEXTURE0);
 	//glBindTexture(GL_TEXTURE_2D, iChannelA);
-	glBindTexture(GL_TEXTURE_2D, iChannel[0]);
+	glBindTexture(GL_TEXTURE_2D, iChannel[1]);
 	
 	//Bind program
-	glUseProgram( gProgramID0 );
+	glUseProgram( gProgramID2 );
 	
-	glUniform4f( glGetUniformLocation(gProgramID0, "debug") , 0.75, 0.5, 0.0, 0.5);
-	glUniform2f( glGetUniformLocation(gProgramID0, "iResolution") , w, h);
-	glUniform1f( glGetUniformLocation(gProgramID0, "iTime") , faketime++);
+	glUniform4f( glGetUniformLocation(gProgramID2, "debug") , 0.75, 0.5, 0.0, 0.5);
+	glUniform2f( glGetUniformLocation(gProgramID2, "iResolution") , w, h);
+	glUniform1f( glGetUniformLocation(gProgramID2, "iTime") , faketime++);
 
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -244,8 +280,12 @@ uint8_t initGL()
 	uint8_t success = 1;
 
 	//Generate program
-	gProgramIDd = compileProgram( "shaderpd.vert", "shaderpd.frag" );
-	gProgramID0 = compileProgram( "shaderpd2.vert", "shaderpd2.frag" );
+	gProgramIDd0 = compileProgram( "shaderpd.vert", "shaderpd.frag" );
+	gProgramIDd1 = compileProgram( "shaderpd2.vert", "shaderpd2.frag" );
+	
+	gProgramID0 = compileProgram( "shaderp0.vert", "shaderp0.frag" );
+	gProgramID1 = compileProgram( "shaderp1.vert", "shaderp1.frag" );
+	gProgramID2 = compileProgram( "shaderp2.vert", "shaderp2.frag" );
 
 	//Initialize clear color
 	glEnable(GL_BLEND);

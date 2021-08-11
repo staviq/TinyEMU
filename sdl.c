@@ -392,7 +392,7 @@ void sdl_refresh(VirtMachine *m)
 		
 		updateTex( m->fb_dev->width, m->fb_dev->height, m->fb_dev->fb_data );
 		
-		render( m->fb_dev->width, m->fb_dev->height );
+		render( m->fb_dev->width * (sdl_fullscreen?2:1), m->fb_dev->height * (sdl_fullscreen?2:1) );
 		
 		SDL_GL_SwapWindow( window );
 	}
@@ -424,12 +424,12 @@ static void sdl_hide_cursor(void)
 	SDL_SetCursor(sdl_cursor_hidden);
 }
 
-void sdl_init(int width, int height)
+void sdl_init(int * width, int * height)
 {
 	fprintf( stderr, "SDL INIT\r\n" ); fflush( stderr );
 	
-	window_width = width;
-	window_height = height;
+	window_width = *width;
+	window_height = *height;
 
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE)) {
 		fprintf(stderr, "Could not initialize SDL - exiting\n");
@@ -441,8 +441,27 @@ void sdl_init(int width, int height)
 	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
 	SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
 	
-	//int result = SDL_CreateWindowAndRenderer(width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN, &window, &renderer);
-	window = SDL_CreateWindow( "TinyEMU", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN );
+	if( sdl_fullscreen )
+	{
+		SDL_DisplayMode DM;
+		SDL_GetDesktopDisplayMode(0, &DM);
+		
+		window_width = DM.w;
+		window_height = DM.h;
+		
+		*width = DM.w / 2;
+		*height = DM.h / 2;
+		
+		fprintf( stderr, "FS SCALING: %dx%d -> %dx%d\r\n", window_width, window_height, *width, *height );fflush( stderr );
+		
+		window = SDL_CreateWindow( "TinyEMU", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, window_width, window_height, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN_DESKTOP );
+	}
+	else
+	{
+		//int result = SDL_CreateWindowAndRenderer(width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN, &window, &renderer);
+		window = SDL_CreateWindow( "TinyEMU", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, *width, *height, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN );
+	}
+	
 	if (window == NULL) {
 		fprintf(stderr, "Could not create SDL window\n");
 		exit(1);

@@ -23,6 +23,8 @@
  */
 #include "json.h"
 
+extern uint8_t sdl_fullscreen;
+
 typedef struct FBDevice FBDevice;
 
 typedef void SimpleFBDrawFunc(FBDevice *fb_dev, void *opaque,
@@ -172,7 +174,7 @@ static inline void vm_send_key_event(VirtMachine *s1, BOOL is_down, uint16_t key
 
 /* gui */
 void sdl_refresh(VirtMachine *m);
-void sdl_init(int width, int height);
+void sdl_init(int * width, int * height);
 
 /* simplefb.c */
 typedef struct SimpleFBState SimpleFBState;
