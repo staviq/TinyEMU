@@ -15,7 +15,7 @@ GLuint rBuff[GL_BUFFERS];
 
 void generateTex(uint32_t w, uint32_t h)
 {
-	// only called if screen size changed
+	// only called if screen size changed, which currently is always only once right after gl init.
 	
 	glDeleteTextures(1, &iChannelA);
 	glGenTextures(1, &iChannelA);
@@ -32,15 +32,34 @@ void generateTex(uint32_t w, uint32_t h)
 	glGenTextures( GL_BUFFERS, iChannel );
 	glDeleteFramebuffers( GL_BUFFERS, fBuff );
 	glGenFramebuffers( GL_BUFFERS, fBuff );
+	glDeleteRenderbuffers(GL_BUFFERS, rBuff);
+	glGenRenderbuffers(GL_BUFFERS, rBuff);
 	
 	for( int i=0; i< GL_BUFFERS; ++i )
 	{
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fBuff[i]);
+		glDisable(GL_DEPTH_TEST);
 		glBindTexture(GL_TEXTURE_2D, iChannel[i]);
+		glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+		glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+		glBindRenderbuffer(GL_RENDERBUFFER, rBuff[i]);
 		
 		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0 );
-		
+		//glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL );
+		//glTexImage2D  (GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, NULL);
 		glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, iChannel[i], 0 );
+		
+		//glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w, h);
+		//glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rBuff[i]);
+		
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		{
+			fprintf( stderr, "ERROR: Framebuffer is not complete!\r\n" ); fflush( stderr );
+		}
+		//else
+		//{
+		//	fprintf( stderr, "FRAMEBUFFER %d RDY (%d)\r\n", i, glCheckFramebufferStatus(GL_FRAMEBUFFER) ); fflush( stderr );
+		//}
 	}
 	
 	glBindTexture( GL_TEXTURE_2D, 0 );
@@ -56,10 +75,21 @@ void updateTex( uint32_t w, uint32_t h, void *data )
 
 void render( uint32_t w, uint32_t h )
 {
+	
+	//generateTex(w,h);
+	
 	static uint8_t faketime = 0;
 	
+	GLint debugu = glGetUniformLocation(gProgramIDd, "debug");
+	GLint resolution = glGetUniformLocation(gProgramIDd, "iResolution");
+	GLint time = glGetUniformLocation(gProgramIDd, "iTime");
+	
+	glBindFramebuffer( GL_FRAMEBUFFER, fBuff[0] );
+	//glBindFramebuffer( GL_FRAMEBUFFER, fBuffA );
+	glDisable(GL_DEPTH_TEST);
+	
 	//Clear color buffer
-	glClearColor( 0.0, 0.0, 0.0, 0.0 );
+	glClearColor( 1.0, 1.0, 1.0, 1.0 );
 	glClear( GL_COLOR_BUFFER_BIT );
 	
 	glActiveTexture(GL_TEXTURE0);
@@ -67,14 +97,34 @@ void render( uint32_t w, uint32_t h )
 	
 	//Bind program
 	glUseProgram( gProgramIDd );
-	
-	GLint debugu = glGetUniformLocation(gProgramIDd, "debug");
-	glUniform3f(debugu, 1.0, 0.0, 0.0);
-	
-	GLint resolution = glGetUniformLocation(gProgramIDd, "iResolution");
+
+	glUniform4f(debugu, 0.25, 0.5, 0.0, 1.0);
 	glUniform2f(resolution, w, h);
+	glUniform1f(time, faketime++);
+
+	glBindVertexArray(VAO);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+	glUseProgram( 0 );
 	
-	GLint time = glGetUniformLocation(gProgramIDd, "iTime");
+	//---
+	
+	glBindFramebuffer( GL_FRAMEBUFFER, fBuffA );
+	glDisable(GL_DEPTH_TEST);
+	
+	//Clear color buffer
+	glClearColor( 1.0, 1.0, 1.0, 1.0 );
+	glClear( GL_COLOR_BUFFER_BIT );
+	
+	glActiveTexture(GL_TEXTURE0);
+	//glBindTexture(GL_TEXTURE_2D, iChannelA);
+	glBindTexture(GL_TEXTURE_2D, iChannel[0]);
+	
+	//Bind program
+	glUseProgram( gProgramIDd );
+	
+	glUniform4f(debugu, 0.75, 0.5, 0.0, 0.5);
+	glUniform2f(resolution, w, h);
 	glUniform1f(time, faketime++);
 
 	glBindVertexArray(VAO);
