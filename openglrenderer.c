@@ -68,9 +68,11 @@ void generateTex(uint32_t w, uint32_t h)
 
 void updateTex( uint32_t w, uint32_t h, void *data )
 {
+	glBindTexture(GL_TEXTURE_2D, iChannelA);
 	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 	glTexImage2D  (GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, data);
 	//glGenerateMipmap(GL_TEXTURE_2D);
+	glBindTexture( GL_TEXTURE_2D, 0 );
 }
 
 void render( uint32_t w, uint32_t h )
@@ -80,27 +82,23 @@ void render( uint32_t w, uint32_t h )
 	
 	static uint8_t faketime = 0;
 	
-	GLint debugu = glGetUniformLocation(gProgramIDd, "debug");
-	GLint resolution = glGetUniformLocation(gProgramIDd, "iResolution");
-	GLint time = glGetUniformLocation(gProgramIDd, "iTime");
-	
 	glBindFramebuffer( GL_FRAMEBUFFER, fBuff[0] );
 	//glBindFramebuffer( GL_FRAMEBUFFER, fBuffA );
 	glDisable(GL_DEPTH_TEST);
 	
 	//Clear color buffer
 	glClearColor( 1.0, 1.0, 1.0, 1.0 );
-	glClear( GL_COLOR_BUFFER_BIT );
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, iChannelA);
 	
 	//Bind program
 	glUseProgram( gProgramIDd );
-
-	glUniform4f(debugu, 0.25, 0.5, 0.0, 1.0);
-	glUniform2f(resolution, w, h);
-	glUniform1f(time, faketime++);
+	
+	glUniform4f( glGetUniformLocation(gProgramIDd, "debug") , 0.25, 0.5, 0.0, 1.0);
+	glUniform2f( glGetUniformLocation(gProgramIDd, "iResolution") , w, h);
+	glUniform1f( glGetUniformLocation(gProgramIDd, "iTime") , faketime++);
 
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -114,18 +112,18 @@ void render( uint32_t w, uint32_t h )
 	
 	//Clear color buffer
 	glClearColor( 1.0, 1.0, 1.0, 1.0 );
-	glClear( GL_COLOR_BUFFER_BIT );
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	
 	glActiveTexture(GL_TEXTURE0);
 	//glBindTexture(GL_TEXTURE_2D, iChannelA);
 	glBindTexture(GL_TEXTURE_2D, iChannel[0]);
 	
 	//Bind program
-	glUseProgram( gProgramIDd );
+	glUseProgram( gProgramID0 );
 	
-	glUniform4f(debugu, 0.75, 0.5, 0.0, 0.5);
-	glUniform2f(resolution, w, h);
-	glUniform1f(time, faketime++);
+	glUniform4f( glGetUniformLocation(gProgramID0, "debug") , 0.75, 0.5, 0.0, 0.5);
+	glUniform2f( glGetUniformLocation(gProgramID0, "iResolution") , w, h);
+	glUniform1f( glGetUniformLocation(gProgramID0, "iTime") , faketime++);
 
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -247,6 +245,7 @@ uint8_t initGL()
 
 	//Generate program
 	gProgramIDd = compileProgram( "shaderpd.vert", "shaderpd.frag" );
+	gProgramID0 = compileProgram( "shaderpd2.vert", "shaderpd2.frag" );
 
 	//Initialize clear color
 	glEnable(GL_BLEND);
