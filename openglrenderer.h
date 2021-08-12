@@ -2,9 +2,9 @@
 #define OPENGLRENDERER_H
 
 #include <SDL.h>
-#include <gl\glew.h>
+#include <GL/glew.h>
 #include <SDL_opengl.h>
-#include <gl\glu.h>
+#include <GL/glu.h>
 
 extern uint8_t sdl_fullscreen;
 

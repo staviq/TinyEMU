@@ -754,6 +754,7 @@ int temu_main(int argc, char **argv)
 int main(int argc, char **argv)
 #endif
 {
+    fprintf( stderr, "TEMU START\r\n" );fflush( stderr );
     VirtMachine *s;
     const char *path, *cmdline, *build_preload_file;
     int c, option_index, i, ram_size, accel_enable;
@@ -821,6 +822,8 @@ int main(int argc, char **argv)
 
     path = argv[optind++];
 
+	fprintf( stderr, "TEMU PARSE CFG\r\n" );fflush( stderr );
+
     virt_machine_set_defaults(p);
 #ifdef CONFIG_FS_NET
     fs_wget_init();
@@ -829,6 +832,8 @@ int main(int argc, char **argv)
 #ifdef CONFIG_FS_NET
     fs_net_event_loop(NULL, NULL);
 #endif
+
+	fprintf( stderr, "TEMU PARSE DEFAULTS\r\n" );fflush( stderr );
 
     /* override some config parameters */
 
@@ -841,8 +846,11 @@ int main(int argc, char **argv)
         vm_add_cmdline(p, cmdline);
     }
     
+    fprintf( stderr, "TEMU CFG RAM\r\n" );fflush( stderr );
+
     /* open the files & devices */
     for(i = 0; i < p->drive_count; i++) {
+		fprintf( stderr, "TEMU CFG BDEV\r\n" );fflush( stderr );
         BlockDevice *drive;
         char *fname;
         fname = get_file_path(p->cfg_filename, p->tab_drive[i].filename);
@@ -863,6 +871,7 @@ int main(int argc, char **argv)
     }
 
     for(i = 0; i < p->fs_count; i++) {
+		fprintf( stderr, "TEMU CFG FS\r\n" );fflush( stderr );
         FSDevice *fs;
         const char *path;
         path = p->tab_fs[i].filename;
@@ -895,6 +904,7 @@ int main(int argc, char **argv)
     }
 
     for(i = 0; i < p->eth_count; i++) {
+		fprintf( stderr, "TEMU CFG ETH\r\n" );fflush( stderr );
 #ifdef CONFIG_SLIRP
         if (!strcmp(p->tab_eth[i].driver, "user")) {
             p->tab_eth[i].net = slirp_open();
@@ -916,11 +926,16 @@ int main(int argc, char **argv)
         }
     }
     
+    fprintf( stderr, "TEMU CFG CONSOLE\r\n" );fflush( stderr );
 #ifdef CONFIG_SDL
+	fprintf( stderr, "TEMU SDL ENABLED\r\n" );fflush( stderr );
     if (p->display_device) {
+		fprintf( stderr, "TEMU INIT SDL\r\n" );fflush( stderr );
         sdl_init(&p->width, &p->height);
 		p->console = console_init(TRUE);
     } else
+#else
+	fprintf( stderr, "TEMU SDL DISABLED\r\n" );fflush( stderr );
 #endif
     {
 #ifdef _WIN32

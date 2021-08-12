@@ -139,14 +139,18 @@ ifdef CONFIG_FS_NET
 	endif # CONFIG_WIN32
 endif # CONFIG_FS_NET
 ifdef CONFIG_SDL
-	EMU_LIBS+=-lSDL2
 	EMU_OBJS+=sdl.o
 	EMU_OBJS+=openglrenderer.o
+	ifdef CONFIG_WIN32
+	EMU_LIBS+=-lSDL2
 	override CFLAGS+=-DCONFIG_SDL
 	override CFLAGS+=-IC:/msys64/mingw64/include/SDL2 -Dmain=SDL_main -IC:/msys64/mingw64/include
-	ifdef CONFIG_WIN32
 	LDFLAGS+=-LC:/msys64/mingw64/lib -lmingw32 -lSDL2main -lSDL2 -mwindows -LC:/msys64/mingw64/lib -lglew32 -lopengl32
 #	LDFLAGS+=-mwindows -LC:/msys64/mingw64/lib -lGLESv2 -lpthread -pthread -lm -lopengl32 -lglu32 -lglew32
+	else
+	override CFLAGS+=-DCONFIG_SDL
+	override CFLAGS+=$(shell sdl2-config --cflags)
+	LDFLAGS+=$(shell sdl2-config --libs) $(shell pkg-config glew --libs)
 	endif
 endif
 
