@@ -712,7 +712,7 @@ static int riscv_build_fdt(RISCVMachine *m, uint8_t *dst,
     fb_dev = m->common.fb_dev;
     if (fb_dev) {
         fdt_begin_node_num(s, "framebuffer", FRAMEBUFFER_BASE_ADDR);
-        fdt_prop_str(s, "compatible", "simple-framebuffer");
+        fdt_prop_str(s, "compatible", "temu-framebuffer");
         fdt_prop_tab_u64_2(s, "reg", FRAMEBUFFER_BASE_ADDR, fb_dev->fb_size);
         fdt_prop_u32(s, "width", fb_dev->width);
         fdt_prop_u32(s, "height", fb_dev->height);
@@ -995,7 +995,7 @@ static VirtMachine *riscv_machine_init(const VirtMachineParams *p)
         FBDevice *fb_dev;
         fb_dev = mallocz(sizeof(*fb_dev));
         s->common.fb_dev = fb_dev;
-        if (!strcmp(p->display_device, "simplefb")) {
+        if (!strcmp(p->display_device, "temufb")) {
             simplefb_init(s->mem_map,
                           FRAMEBUFFER_BASE_ADDR,
                           fb_dev,
