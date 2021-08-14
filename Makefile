@@ -79,7 +79,8 @@ else
 CC=$(CROSS_PREFIX)gcc
 endif # CONFIG_IOS
 STRIP=$(CROSS_PREFIX)strip
-override CFLAGS+=-O2 -Wall -g -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -MMD
+#override CFLAGS+=-O2 -Wall -g -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -MMD
+override CFLAGS+=-O3 -Wall -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -MMD
 override CFLAGS+=-D_GNU_SOURCE -DCONFIG_VERSION=\"$(shell cat VERSION)\"
 ifdef CONFIG_IOS
 ifndef CONFIG_IOS_SIMULATOR
@@ -88,6 +89,9 @@ endif
 endif
 LDFLAGS=
 
+
+#override CFLAGS+=-g -pg -no-pie
+#LDFLAGS+=-pg -no-pie
 
 override CFLAGS+=-g
 
