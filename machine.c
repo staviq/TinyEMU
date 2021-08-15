@@ -152,11 +152,14 @@ static char *cmdline_subst(const char *cmdline)
                 int n, sg;
                 /* get the offset to UTC */
                 time(&ti);
+				//#ifdef _WIN32
+				//localtime_s(&ti, &tm);
+				//n = 0;
+				//#else
+				localtime_r(&ti, &tm);
 				#ifdef _WIN32
-				localtime_s(&ti, &tm);
 				n = 0;
 				#else
-				localtime_r(&ti, &tm);
 				n = tm.tm_gmtoff / 60;
 				#endif
                 sg = '-';

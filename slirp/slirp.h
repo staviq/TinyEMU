@@ -17,18 +17,37 @@ struct iovec {
 
 typedef char *caddr_t;
 
-# include <windows.h>
 # include <winsock2.h>
+# include <windows.h>
 # include <ws2tcpip.h>
 # include <sys/timeb.h>
 # include <iphlpapi.h>
 
-# define EWOULDBLOCK WSAEWOULDBLOCK
-# define EINPROGRESS WSAEINPROGRESS
-# define ENOTCONN WSAENOTCONN
-# define EHOSTUNREACH WSAEHOSTUNREACH
-# define ENETUNREACH WSAENETUNREACH
-# define ECONNREFUSED WSAECONNREFUSED
+#ifdef EWOULDBLOCK
+	#undef EWOULDBLOCK
+	# define EWOULDBLOCK WSAEWOULDBLOCK
+#endif
+#ifdef EINPROGRESS
+	#undef EINPROGRESS
+	# define EINPROGRESS WSAEINPROGRESS
+#endif
+#ifdef ENOTCONN
+	#undef ENOTCONN
+	# define ENOTCONN WSAENOTCONN
+#endif
+#ifdef EHOSTUNREACH
+	#undef EHOSTUNREACH
+	# define EHOSTUNREACH WSAEHOSTUNREACH
+#endif
+#ifdef ENETUNREACH
+	#undef ENETUNREACH
+	# define ENETUNREACH WSAENETUNREACH
+#endif
+#ifdef ECONNREFUSED
+	#undef ECONNREFUSED
+	# define ECONNREFUSED WSAECONNREFUSED
+#endif
+
 #else
 # define ioctlsocket ioctl
 # define closesocket(s) close(s)

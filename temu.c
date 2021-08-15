@@ -224,7 +224,8 @@ static void console_write(void *opaque, const uint8_t *buf, int len)
 
 static int console_read(void *opaque, uint8_t *buf, int len)
 {
-	fprintf( stderr, "DBG: CONSOLE READ", buf );
+	//fprintf( stderr, "DBG: CONSOLE READ", buf );
+	fprintf( stderr, "DBG: CONSOLE READ" );
 	//STDIODevice *s = opaque;
     int ret, i, j;
     uint8_t ch;
@@ -269,7 +270,7 @@ static int console_read(void *opaque, uint8_t *buf, int len)
             if (0){/*(ch == 1) {
                 s->console_esc_state = 1;
             */} else {
-            output_char:
+            //output_char:
                 buf[j++] = ch;
             }
         }
@@ -280,19 +281,19 @@ static int console_read(void *opaque, uint8_t *buf, int len)
 CharacterDevice *console_init(BOOL allow_ctrlc)
 {
     CharacterDevice *dev;
-    //STDIODevice *s;
+    STDIODevice *s;
     //struct sigaction sig;
 
     //term_init(allow_ctrlc);
 
     dev = mallocz(sizeof(*dev));
-    //s = mallocz(sizeof(*s));
-    //s->stdin_fd = 0;
+    s = mallocz(sizeof(*s));
+    s->stdin_fd = 0;
     /* Note: the glibc does not properly tests the return value of
        write() in printf, so some messages on stdout may be lost */
     //fcntl(s->stdin_fd, F_SETFL, O_NONBLOCK);
 
-    //s->resize_pending = FALSE;
+    s->resize_pending = FALSE;
     //global_stdio_device = s;
     
     /* use a signal to get the host terminal resize events */
@@ -301,7 +302,7 @@ CharacterDevice *console_init(BOOL allow_ctrlc)
     //sig.sa_flags = 0;
     //sigaction(SIGWINCH, &sig, NULL);
     
-    //dev->opaque = s;
+    dev->opaque = s;
 	dev->opaque = 1;
     dev->write_data = console_write;
     dev->read_data = console_read;

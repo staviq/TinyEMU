@@ -208,6 +208,9 @@ install: $(PROGS)
 	$(STRIP) $(PROGS)
 	$(INSTALL) -m755 $(PROGS) "$(DESTDIR)$(bindir)"
 
+machine.o: machine.c
+	$(CC) -D_POSIX_C_SOURCE $(CFLAGS) -c -o $@ $<
+
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
