@@ -143,9 +143,13 @@ size_t sopreprbuf(struct socket *so, struct iovec *iov, int *np)
 int
 soread(struct socket *so)
 {
-	int n, nn;
+	int n=0, nn=0;
 	struct sbuf *sb = &so->so_snd;
 	struct iovec iov[2];
+
+	//fix for compwarn
+	memset( iov, 0, sizeof(iov) );
+	for( int i=0;i<2;++i ){ iov[i].iov_base=NULL; }
 
 	DEBUG_CALL("soread");
 	DEBUG_ARG("so = %lx", (long )so);
@@ -206,6 +210,10 @@ int soreadbuf(struct socket *so, const char *buf, int size)
     int n, nn, copy = size;
 	struct sbuf *sb = &so->so_snd;
 	struct iovec iov[2];
+
+	//fix for compwarn
+	memset( iov, 0, sizeof(iov) );
+	for( int i=0;i<2;++i ){ iov[i].iov_base=NULL; }
 
 	DEBUG_CALL("soreadbuf");
 	DEBUG_ARG("so = %lx", (long )so);

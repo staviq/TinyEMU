@@ -757,7 +757,10 @@ int main(int argc, char **argv)
 {
     fprintf( stderr, "TEMU START\r\n" );fflush( stderr );
     VirtMachine *s;
-    const char *path, *cmdline, *build_preload_file;
+    const char *path, *cmdline;
+#ifdef CONFIG_FS_NET
+	const char *build_preload_file;
+#endif
     int c, option_index, i, ram_size, accel_enable;
     BOOL allow_ctrlc;
     BlockDeviceModeEnum drive_mode;
@@ -769,7 +772,9 @@ int main(int argc, char **argv)
     drive_mode = BF_MODE_SNAPSHOT;
     accel_enable = -1;
     cmdline = NULL;
+#ifdef CONFIG_FS_NET
     build_preload_file = NULL;
+#endif
     for(;;) {
         c = getopt_long_only(argc, argv, "fwhm:", options, &option_index);
         if (c == -1)
@@ -793,7 +798,9 @@ int main(int argc, char **argv)
                 accel_enable = FALSE;
                 break;
             case 6: /* build-preload */
+#ifdef CONFIG_FS_NET
                 build_preload_file = optarg;
+#endif
                 break;
             default:
                 fprintf(stderr, "unknown option index: %d\n", option_index);
