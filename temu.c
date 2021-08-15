@@ -281,19 +281,19 @@ static int console_read(void *opaque, uint8_t *buf, int len)
 CharacterDevice *console_init(BOOL allow_ctrlc)
 {
     CharacterDevice *dev;
-    STDIODevice *s;
+    //STDIODevice *s;
     //struct sigaction sig;
 
     //term_init(allow_ctrlc);
 
     dev = mallocz(sizeof(*dev));
-    s = mallocz(sizeof(*s));
-    s->stdin_fd = 0;
+    //s = mallocz(sizeof(*s));
+    //s->stdin_fd = 0;
     /* Note: the glibc does not properly tests the return value of
        write() in printf, so some messages on stdout may be lost */
     //fcntl(s->stdin_fd, F_SETFL, O_NONBLOCK);
 
-    s->resize_pending = FALSE;
+    //s->resize_pending = FALSE;
     //global_stdio_device = s;
     
     /* use a signal to get the host terminal resize events */
@@ -302,8 +302,8 @@ CharacterDevice *console_init(BOOL allow_ctrlc)
     //sig.sa_flags = 0;
     //sigaction(SIGWINCH, &sig, NULL);
     
-    dev->opaque = s;
-	dev->opaque = 1;
+    //dev->opaque = s;
+	//dev->opaque = 1;
     dev->write_data = console_write;
     dev->read_data = console_read;
     return dev;
@@ -881,8 +881,13 @@ int main(int argc, char **argv)
     for(i = 0; i < p->fs_count; i++) {
 		fprintf( stderr, "TEMU CFG FS\r\n" );fflush( stderr );
         FSDevice *fs;
+#ifdef CONFIG_FS_NET
+#ifndef _WIN32
+		// ifdefs so the compiler does not complain about unused
         const char *path;
         path = p->tab_fs[i].filename;
+#endif
+#endif
 #ifdef CONFIG_FS_NET
         if (is_url(path)) {
             fs = fs_net_init(path, NULL, NULL);
