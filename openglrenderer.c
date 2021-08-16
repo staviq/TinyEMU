@@ -1,5 +1,7 @@
 #include "openglrenderer.h"
 
+struct VirtMachine * openglrenderer_owner = NULL;
+
 GLuint gProgramIDd0 = 0;
 GLuint gProgramIDd1 = 0;
 GLuint gProgramID0 = 0;
@@ -71,8 +73,31 @@ void generateTex(uint32_t w, uint32_t h)
 	glBindFramebuffer( GL_FRAMEBUFFER, fBuffA );
 }
 
+extern void * openglrenderer_register_ram( uint64_t addr, uint64_t size );
+
 void updateTex( uint32_t w, uint32_t h, void *data )
 {
+	fb_image * datamaptest = (fb_image*)data;
+	uint8_t * imgdata = 
+	
+	fprintf( stderr, "DATAMAPTEST dx%04d dy%04d w%04d h%04d ptr:0x%016llX\r\n", datamaptest[0].dx, datamaptest[0].dy, datamaptest[0].width, datamaptest[0].height, (uintptr_t)(datamaptest[0].data) ); fflush( stderr );
+	/*
+	0xFFFFFFE001B69500
+	0xFFFFFFE001B69500
+	*/
+	
+	void * datamem = openglrenderer_register_ram( (uintptr_t)(datamaptest[0].data), 128/*lol*/);
+	
+	for( int i=0; i<8; ++i )
+	{
+		if( !(i%8) )
+		{
+			fprintf( stderr, "\r\n" );fflush( stderr );
+		}
+		fprintf( stderr, " 0x%02X", datamem+i );
+	}
+	fprintf( stderr, "\r\n" );fflush( stderr );
+	
 	glBindTexture(GL_TEXTURE_2D, iChannelA);
 	if( sdl_fullscreen )
 	{
@@ -109,11 +134,22 @@ void render( uint32_t w, uint32_t h )
 	glBindTexture(GL_TEXTURE_2D, iChannelA);
 	
 	//Bind program
-	glUseProgram( gProgramID0 );
-	
-	glUniform4f( glGetUniformLocation(gProgramID0, "debug") , 0.25, 0.5, 0.0, 1.0);
-	glUniform2f( glGetUniformLocation(gProgramID0, "iResolution") , w, h);
-	glUniform1f( glGetUniformLocation(gProgramID0, "iTime") , faketime++);
+	if( sdl_debugshaders )
+	{
+		glUseProgram( gProgramIDd0 );
+		
+		glUniform4f( glGetUniformLocation(gProgramIDd0, "debug") , 0.0, 0.0, 0.0, 1.0);
+		glUniform2f( glGetUniformLocation(gProgramIDd0, "iResolution") , w, h);
+		glUniform1f( glGetUniformLocation(gProgramIDd0, "iTime") , faketime++);
+	}
+	else
+	{
+		glUseProgram( gProgramID0 );
+		
+		glUniform4f( glGetUniformLocation(gProgramID0, "debug") , 0.25, 0.5, 0.0, 1.0);
+		glUniform2f( glGetUniformLocation(gProgramID0, "iResolution") , w, h);
+		glUniform1f( glGetUniformLocation(gProgramID0, "iTime") , faketime++);
+	}
 
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -134,12 +170,23 @@ void render( uint32_t w, uint32_t h )
 	glBindTexture(GL_TEXTURE_2D, iChannel[0]);
 	
 	//Bind program
-	glUseProgram( gProgramID1 );
+	if( sdl_debugshaders )
+	{
+		glUseProgram( gProgramIDd0 );
+		
+		glUniform4f( glGetUniformLocation(gProgramIDd0, "debug") , 0.0, 0.0, 0.0, 1.0);
+		glUniform2f( glGetUniformLocation(gProgramIDd0, "iResolution") , w, h);
+		glUniform1f( glGetUniformLocation(gProgramIDd0, "iTime") , faketime++);
+	}
+	else
+	{
+		glUseProgram( gProgramID1 );
+		
+		glUniform4f( glGetUniformLocation(gProgramID1, "debug") , 0.5, 0.5, 0.0, 0.25);
+		glUniform2f( glGetUniformLocation(gProgramID1, "iResolution") , w, h);
+		glUniform1f( glGetUniformLocation(gProgramID1, "iTime") , faketime++);
+	}
 	
-	glUniform4f( glGetUniformLocation(gProgramID1, "debug") , 0.5, 0.5, 0.0, 0.25);
-	glUniform2f( glGetUniformLocation(gProgramID1, "iResolution") , w, h);
-	glUniform1f( glGetUniformLocation(gProgramID1, "iTime") , faketime++);
-
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
@@ -159,12 +206,23 @@ void render( uint32_t w, uint32_t h )
 	glBindTexture(GL_TEXTURE_2D, iChannel[1]);
 	
 	//Bind program
-	glUseProgram( gProgramID2 );
+	if( sdl_debugshaders )
+	{
+		glUseProgram( gProgramIDd0 );
+		
+		glUniform4f( glGetUniformLocation(gProgramIDd0, "debug") , 0.0, 0.0, 0.0, 1.0);
+		glUniform2f( glGetUniformLocation(gProgramIDd0, "iResolution") , w, h);
+		glUniform1f( glGetUniformLocation(gProgramIDd0, "iTime") , faketime++);
+	}
+	else
+	{
+		glUseProgram( gProgramID2 );
+		
+		glUniform4f( glGetUniformLocation(gProgramID2, "debug") , 0.75, 0.5, 0.0, 0.5);
+		glUniform2f( glGetUniformLocation(gProgramID2, "iResolution") , w, h);
+		glUniform1f( glGetUniformLocation(gProgramID2, "iTime") , faketime++);
+	}
 	
-	glUniform4f( glGetUniformLocation(gProgramID2, "debug") , 0.75, 0.5, 0.0, 0.5);
-	glUniform2f( glGetUniformLocation(gProgramID2, "iResolution") , w, h);
-	glUniform1f( glGetUniformLocation(gProgramID2, "iTime") , faketime++);
-
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);

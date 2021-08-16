@@ -21,25 +21,35 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifndef MACHINE_H
+#define MACHINE_H
+
 #include "json.h"
 
 extern uint8_t sdl_fullscreen;
 
 typedef struct FBDevice FBDevice;
 
-typedef void SimpleFBDrawFunc(FBDevice *fb_dev, void *opaque,
-                              int x, int y, int w, int h);
+typedef enum FBType {
+	FBTYPE_SIMPLEFB,
+	FBTYPE_TEMUFB
+} FBType;
+
+#define FB_DATA_OFFSET 4096
+
+typedef void SimpleFBDrawFunc(FBDevice *fb_dev, void *opaque, int x, int y, int w, int h);
 
 struct FBDevice {
-    /* the following is set by the device */
-    int width;
-    int height;
-    int stride; /* current stride in bytes */
-    uint8_t *fb_data; /* current pointer to the pixel data */
-    int fb_size; /* frame buffer memory size (info only) */
-    void *device_opaque;
-    void (*refresh)(struct FBDevice *fb_dev,
-                    SimpleFBDrawFunc *redraw_func, void *opaque);
+	/* the following is set by the device */
+	int width;
+	int height;
+	int stride; /* current stride in bytes */
+	uint8_t *fb_data; /* current pointer to the pixel data */
+	int fb_size; /* frame buffer memory size (info only) */
+	void *device_opaque;
+	FBType fb_type; // 0 simplefb; 1 temufb
+	void * owner;
+	void (*refresh)(struct FBDevice *fb_dev, SimpleFBDrawFunc *redraw_func, void *opaque);
 };
 
 #define MAX_DRIVE_DEVICE 4
@@ -196,3 +206,6 @@ BlockDevice *block_device_init_http(const char *url,
                                     int max_cache_size_kb,
                                     void (*start_cb)(void *opaque),
                                     void *start_opaque);
+
+
+#endif

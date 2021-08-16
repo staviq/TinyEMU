@@ -42,27 +42,7 @@
 
 /* RISCV machine */
 
-typedef struct RISCVMachine {
-    VirtMachine common;
-    PhysMemoryMap *mem_map;
-    int max_xlen;
-    RISCVCPUState *cpu_state;
-    uint64_t ram_size;
-    /* RTC */
-    BOOL rtc_real_time;
-    uint64_t rtc_start_time;
-    uint64_t timecmp;
-    /* PLIC */
-    uint32_t plic_pending_irq, plic_served_irq;
-    IRQSignal plic_irq[32]; /* IRQ 0 is not used */
-    /* HTIF */
-    uint64_t htif_tohost, htif_fromhost;
-
-    VIRTIODevice *keyboard_dev;
-    VIRTIODevice *mouse_dev;
-
-    int virtio_count;
-} RISCVMachine;
+#include "riscv_machine.h"
 
 #define LOW_RAM_SIZE   0x00010000 /* 64KB */
 #define RAM_BASE_ADDR  0x80000000
@@ -72,6 +52,7 @@ typedef struct RISCVMachine {
 #define VIRTIO_BASE_ADDR 0x40010000
 #define VIRTIO_SIZE      0x1000
 #define VIRTIO_IRQ       1
+#define TEMUFB_IRQ       16
 #define PLIC_BASE_ADDR 0x40100000
 #define PLIC_SIZE      0x00400000
 #define FRAMEBUFFER_BASE_ADDR 0x41000000
@@ -711,14 +692,39 @@ static int riscv_build_fdt(RISCVMachine *m, uint8_t *dst,
 
     fb_dev = m->common.fb_dev;
     if (fb_dev) {
-        fdt_begin_node_num(s, "framebuffer", FRAMEBUFFER_BASE_ADDR);
-        fdt_prop_str(s, "compatible", "temu-framebuffer");
-        fdt_prop_tab_u64_2(s, "reg", FRAMEBUFFER_BASE_ADDR, fb_dev->fb_size);
-        fdt_prop_u32(s, "width", fb_dev->width);
-        fdt_prop_u32(s, "height", fb_dev->height);
-        fdt_prop_u32(s, "stride", fb_dev->stride);
-        fdt_prop_str(s, "format", "a8r8g8b8");
-        fdt_end_node(s); /* framebuffer */
+		switch( fb_dev->fb_type )
+		{
+			case FBTYPE_TEMUFB:
+			{
+				fdt_begin_node_num(s, "framebuffer", FRAMEBUFFER_BASE_ADDR);
+				fdt_prop_str(s, "compatible", "temu-framebuffer");
+				
+				//fdt_prop_u32(s, "dataoffset", FB_DATA_OFFSET);
+				fdt_prop_u32(s, "dataoffset", FB_DATA_OFFSET);
+				/*
+				0xFFFFFFFF -> FFFF FFFF
+				0xFFFFFF00 -> FFFF 00FF
+				0xFFFFFF0F -> FFFF 0FFF
+				*/
+				
+				fdt_prop_tab_u64_2(s, "reg", FRAMEBUFFER_BASE_ADDR, fb_dev->fb_size + FB_DATA_OFFSET);
+				break;
+			}
+			case FBTYPE_SIMPLEFB:
+			default:
+			{
+				fdt_begin_node_num(s, "framebuffer", FRAMEBUFFER_BASE_ADDR);
+				fdt_prop_str(s, "compatible", "simple-framebuffer");
+				fdt_prop_tab_u64_2(s, "reg", FRAMEBUFFER_BASE_ADDR, fb_dev->fb_size);
+				break;
+			}
+		}
+		
+		fdt_prop_u32(s, "width", fb_dev->width);
+		fdt_prop_u32(s, "height", fb_dev->height);
+		fdt_prop_u32(s, "stride", fb_dev->stride);
+		fdt_prop_str(s, "format", "a8r8g8b8");
+		fdt_end_node(s); /* framebuffer */
     }
     
     fdt_end_node(s); /* soc */
@@ -995,13 +1001,33 @@ static VirtMachine *riscv_machine_init(const VirtMachineParams *p)
         FBDevice *fb_dev;
         fb_dev = mallocz(sizeof(*fb_dev));
         s->common.fb_dev = fb_dev;
-        if (!strcmp(p->display_device, "temufb")) {
-            simplefb_init(s->mem_map,
-                          FRAMEBUFFER_BASE_ADDR,
-                          fb_dev,
-                          p->width, p->height);
-            
-        } else {
+		//support more fb types
+		if( !(strcmp( "simplefb", p->display_device )) )
+		{
+			fb_dev->fb_type = FBTYPE_SIMPLEFB;
+			fb_dev->owner = (VirtMachine *)s;
+			
+			simplefb_init(
+				s->mem_map,
+				FRAMEBUFFER_BASE_ADDR,
+				fb_dev,
+				p->width, p->height
+			);
+		}
+		else if( !(strcmp( "temufb", p->display_device )) )
+		{
+			fb_dev->fb_type = FBTYPE_TEMUFB;
+			fb_dev->owner = (VirtMachine *)s;
+			
+			simplefb_init(
+				s->mem_map,
+				FRAMEBUFFER_BASE_ADDR,
+				fb_dev,
+				p->width, p->height
+			);
+		}
+		else
+		{
             vm_error("unsupported display device: %s\n", p->display_device);
             exit(1);
         }

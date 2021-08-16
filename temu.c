@@ -59,6 +59,7 @@
 #endif
 
 uint8_t sdl_fullscreen = 1;
+uint8_t sdl_debugshaders = 0;
 
 #ifndef _WIN32
 
@@ -714,6 +715,7 @@ static struct option options[] = {
     { "append", required_argument },
     { "no-accel", no_argument },
     { "build-preload", required_argument },
+	{ "debugshaders", no_argument },
     { NULL },
 };
 
@@ -802,6 +804,9 @@ int main(int argc, char **argv)
                 build_preload_file = optarg;
 #endif
                 break;
+			case 7: /* debug shaders */
+				sdl_debugshaders = 1;
+				break;
             default:
                 fprintf(stderr, "unknown option index: %d\n", option_index);
                 exit(1);

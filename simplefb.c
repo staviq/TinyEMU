@@ -103,6 +103,29 @@ static void simplefb_refresh1(FBDevice *fb_dev,
                      s->fb_page_count);
 }
 
+#include "riscv_machine.h"
+
+extern struct VirtMachine * openglrenderer_owner;
+
+void * openglrenderer_register_ram( uint64_t addr, uint64_t size )
+{
+	PhysMemoryRange *pr;
+	
+	fprintf( stderr, "OGLREGRAM: size: %llu (PGSize %u)\r\n", size, DEVRAM_PAGE_SIZE );fflush( stderr );
+	size = ((size % DEVRAM_PAGE_SIZE)?(DEVRAM_PAGE_SIZE):0);
+	fprintf( stderr, "OGLREGRAM: size: %llu (PGSize %u)\r\n", size, DEVRAM_PAGE_SIZE );fflush( stderr );
+
+    pr = register_ram_entry(((struct RISCVMachine*)openglrenderer_owner)->mem_map, addr, size, 0);
+
+    pr->phys_mem = mallocz(size);
+    if (!pr->phys_mem) {
+        fprintf(stderr, "Could not allocate VM memory\n");
+        exit(1);
+    }
+	
+	return (void *)(pr->phys_mem);
+}
+
 SimpleFBState *simplefb_init(PhysMemoryMap *map, uint64_t phys_addr,
                              FBDevice *fb_dev, int width, int height)
 {
@@ -114,7 +137,8 @@ SimpleFBState *simplefb_init(PhysMemoryMap *map, uint64_t phys_addr,
     fb_dev->width = width;
     fb_dev->height = height;
     fb_dev->stride = width * 4;
-    fb_dev->fb_size = (height * fb_dev->stride + FB_ALLOC_ALIGN - 1) & ~(FB_ALLOC_ALIGN - 1);
+	//modified to account for ops buffer
+    fb_dev->fb_size = (height * fb_dev->stride +( fb_dev->fb_type == FBTYPE_TEMUFB ? FB_DATA_OFFSET : 0 ) + FB_ALLOC_ALIGN - 1) & ~(FB_ALLOC_ALIGN - 1);
     s->fb_page_count = fb_dev->fb_size >> DEVRAM_PAGE_SIZE_LOG2;
 
     s->mem_range = cpu_register_ram(map, phys_addr, fb_dev->fb_size,

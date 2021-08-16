@@ -6,7 +6,40 @@
 #include <SDL_opengl.h>
 #include <GL/glu.h>
 
+#include "cutils.h"
+//#include "iomem.h"
+//#include "machine.h"
+
+typedef uint8_t __u8;
+typedef uint16_t __u16;
+typedef uint32_t __u32;
+typedef uint64_t __u64;
+
+typedef struct fb_cmap {
+	__u32 start;			/* First entry	*/
+	__u32 len;			/* Number of entries */
+	__u16 *red;			/* Red values	*/
+	__u16 *green;
+	__u16 *blue;
+	__u16 *transp;			/* transparency, can be NULL */
+} fb_cmap;
+
+typedef struct fb_image {
+	__u32 dx;		/* Where to place image */
+	__u32 dy;
+	__u32 width;		/* Size of image */
+	__u32 height;
+	__u32 fg_color;		/* Only used when a mono bitmap */
+	__u32 bg_color;
+	__u8  depth;		/* Depth of the image */
+	const char *data;	/* Pointer to image data */
+	struct fb_cmap cmap;	/* color map info */
+} fb_image;
+
 extern uint8_t sdl_fullscreen;
+extern uint8_t sdl_debugshaders;
+
+extern struct VirtMachine * openglrenderer_owner;
 
 #define GL_BUFFERS (2)
 extern GLuint gProgramIDd0;

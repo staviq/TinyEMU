@@ -88,6 +88,11 @@ static void sdl_update(FBDevice *fb_dev, void *opaque,
 {
 	int *dirty = (int *)opaque;
 	*dirty = 1;
+	
+	if( openglrenderer_owner == NULL )
+	{
+		openglrenderer_owner = fb_dev->owner;
+	}
 }
 
 static int sdl_get_keycode(const SDL_KeyboardEvent *ev)
